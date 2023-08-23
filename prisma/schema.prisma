@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id       Int      @id @default(autoincrement())
+  name     String  @db.VarChar(255)
+  username String @db.VarChar(255)
+  password String @db.LongText
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+  products Product[]
+}
+
+model Customer {
+  id          Int      @id @default(autoincrement())
+  name        String @db.VarChar(255)
+  email       String @db.VarChar(255) @unique
+  address     String @db.VarChar(255)
+  no_wa       String @db.VarChar(255)
+  city        String @db.VarChar(255)
+  province    String @db.VarChar(255)
+  postal_code String @db.VarChar(255)
+  username    String @db.VarChar(255)
+  password    String @db.LongText
+  refreshTokens RefreshToken[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  sales_item Sales_Item[]
+}
+
+model RefreshToken {
+  id          String   @id @unique @default(uuid())
+  hashedToken String
+  userId      Int
+  customer   Customer  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id             Int       @id @default(autoincrement())
+  code   String @db.VarChar(255)
+  id_category    Int
+  name           String @db.VarChar(255)
+  img            String    @default("no_img.png") @db.VarChar(255)
+  weight         Int
+  stock          Int
+  price          Decimal
+  price_discount Decimal
+  id_parent      Int    @default(0)
+  type           Type     @default(parent)
+  status         Status_type   @default(active)
+  description    String
+  variant String
+  category       Category  @relation(fields: [id_category], references: [id])
+  sales_items Sales_Item[]
+}
+
+model Sales {
+  id             Int        @id @default(autoincrement())
+  no_invoice     String
+  code_status      Int
+  id_deliveries  Int
+  price          Decimal
+  total_pay      Decimal
+  id_sales_item  Int
+  delivery_name String
+  delivery_cost Decimal
+  createdAt      DateTime  @default(now())
+  UpdatedAt      DateTime  @default(now())
+  sales_item     Sales_Item  @relation(fields: [id_sales_item], references: [id])
+}
+
+model Sales_Item {
+  id         Int      @id @default(autoincrement())
+  id_product Int
+  price      Decimal
+  qty        Int
+  id_customer Int
+  ket        String
+  product    Product  @relation(fields: [id_product], references: [id])
+  customer   Customer @relation(fields: [id_customer], references: [id])
+  sales Sales[]
+}
+
+model Status {
+  id   Int    @id @default(autoincrement())
+  code String 
+  label String
+}
+
+enum Type {
+ parent 
+ child 
+}
+
+enum Status_type {
+ active 
+ inactive 
+}
