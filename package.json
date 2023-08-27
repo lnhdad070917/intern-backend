@@ -18,7 +18,8 @@
     "prisma": "^5.1.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seeders": "node seeders/admin.js && node seeders/sales.js && node seeders/kategori.js && node seeders/product.js && node seeders/sales_item.js && node seeders/status.js"
   },
   "keywords": [],
   "author": "",

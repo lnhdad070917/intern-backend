@@ -40,7 +40,7 @@ export const getProduct = async (req, res) => {
     const parentProducts = Array.from(parentMap.values());
     const product = parentProducts.map((product) => {
       if (product.img) {
-        product.img = `http://example.com/${product.img}`;
+        product.img = `http://localhost:2000/public/img/${product.img}`;
       }
       return product;
     });
@@ -64,7 +64,51 @@ export const getProductParent = async (req, res) => {
 
     const product = products.map((product) => {
       if (product.img) {
-        product.img = `http://example.com/${product.img}`;
+        product.img = `http://localhost:2000/public/img/${product.img}`;
+      }
+      return product;
+    });
+
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ msg: error.message });
+  }
+};
+
+export const searchProductParent = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    const products = await prisma.product.findMany({
+      where: {
+        AND: [
+          { type: "parent" },
+          {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  // No need for mode: "insensitive"
+                },
+              },
+              {
+                description: {
+                  contains: query,
+                  // No need for mode: "insensitive"
+                },
+              },
+            ],
+          },
+        ],
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    const product = products.map((product) => {
+      if (product.img) {
+        product.img = `http://localhost:2000/public/img/${product.img}`;
       }
       return product;
     });
@@ -101,19 +145,19 @@ export const getProductbyIdParent = async (req, res) => {
 
       parentWithChildren.children = parentWithChildren.children.map((child) => {
         if (child.img) {
-          child.img = `http://example.com/${child.img}`;
+          child.img = `http://localhost:2000/public/img/${child.img}`;
         }
         return child;
       });
 
       if (parentWithChildren.img) {
-        parentWithChildren.img = `http://example.com/${parentWithChildren.img}`;
+        parentWithChildren.img = `http://localhost:2000/public/img/${parentWithChildren.img}`;
       }
 
       res.status(200).json(parentWithChildren);
     } else {
       if (product.img) {
-        product.img = `http://example.com/${product.img}`;
+        product.img = `http://localhost:2000/public/img/${product.img}`;
       }
 
       res.status(200).json(product);
@@ -137,7 +181,7 @@ export const getProductbyId = async (req, res) => {
     }
 
     if (response.img) {
-      response.img = `http://example.com/${response.img}`;
+      response.img = `http://localhost:2000/public/img/${response.img}`;
     }
 
     res.status(200).json(response);
@@ -150,7 +194,7 @@ export const postProduct = async (req, res) => {
   try {
     upload.single("img")(req, res, async (err) => {
       if (err) {
-        res.status(500).json({ msg: "Error upload imgage : " + err.message });
+        res.status(500).json({ msg: "Error upload image: " + err.message });
       } else {
         const lastProduct = await prisma.product.findFirst({
           orderBy: [{ code: "desc" }],
@@ -165,12 +209,18 @@ export const postProduct = async (req, res) => {
           newCode = `P${newNumericPart}`;
         }
 
+        let imgFileName = "no_foto.jpg"; // Default image file name
+
+        if (req.file) {
+          imgFileName = req.file.filename; // Use the uploaded image if available
+        }
+
         const product = await prisma.product.create({
           data: {
             code: newCode,
             id_category: Number(req.body.id_category),
             name: req.body.name,
-            img: req.file.filename,
+            img: imgFileName,
             weight: parseInt(req.body.weight),
             stock: parseInt(req.body.stock),
             price: req.body.price,
@@ -207,16 +257,129 @@ export const deleteProductById = async (req, res) => {
 };
 
 export const updateProductById = async (req, res) => {
+  try {
+    upload.single("img")(req, res, async (err) => {
+      if (err) {
+        res.status(500).json({ msg: "Error upload imgage : " + err.message });
+      } else {
+        console.log("Uploaded file:", req.file);
+
+        const updatedProductData = {
+          id_category: Number(req.body.id_category),
+          name: req.body.name,
+          weight: parseInt(req.body.weight),
+          stock: parseInt(req.body.stock),
+          price: req.body.price,
+          price_discount: req.body.price_discount,
+          id_parent: parseInt(req.body.id_parent),
+          type: req.body.type,
+          status: req.body.status,
+          description: req.body.description,
+          variant: req.body.variant,
+        };
+
+        console.log(updatedProductData);
+
+        // Update image field only if a new image was uploaded
+        if (req.file) {
+          updatedProductData.img = req.file.filename;
+        }
+
+        // Update the product in the database
+        const updatedProduct = await prisma.product.update({
+          where: { id: Number(req.params.id) },
+          data: updatedProductData,
+        });
+
+        res.status(200).json(updatedProduct);
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ msg: error.message });
+  }
+};
+
+export const updateProductDataById = async (req, res) => {
   const productId = parseInt(req.params.id);
   const updatedProductData = req.body;
 
   try {
+    // Fetch the existing product from the database
+    const existingProduct = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id: productId },
       data: updatedProductData,
     });
 
     res.status(200).json(updatedProduct);
+  } catch (error) {
+    res.status(500).json({ msg: error.message });
+  }
+};
+
+export const updateProductImageById = async (req, res) => {
+  const productId = parseInt(req.params.id);
+
+  try {
+    // Fetch the existing product from the database
+    const existingProduct = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    upload.single("img")(req, res, async (err) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ msg: "Error uploading image: " + err.message });
+      }
+
+      let updatedImageData = existingProduct.img;
+
+      if (req.file) {
+        updatedImageData = req.file.filename;
+      }
+
+      const updatedProduct = await prisma.product.update({
+        where: { id: productId },
+        data: {
+          img: updatedImageData,
+        },
+      });
+
+      res.status(200).json(updatedProduct);
+    });
+  } catch (error) {
+    res.status(500).json({ msg: error.message });
+  }
+};
+
+export const getProductAll = async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+      },
+    });
+
+    const product = products.map((product) => {
+      if (product.img) {
+        product.img = `http://localhost:2000/public/img/${product.img}`;
+      }
+      return product;
+    });
+
+    res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ msg: error.message });
   }

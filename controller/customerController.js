@@ -25,16 +25,6 @@ export const getCustomerbyId = async (req, res) => {
 export const postCustomer = async (req, res) => {
   const customerData = req.body;
   try {
-    const existingCustomer = await prisma.customer.findUnique({
-      where: {
-        email: customerData.email,
-      },
-    });
-
-    if (existingCustomer) {
-      return res.status(400).json({ msg: "Email already exists" });
-    }
-
     const hashedPassword = bcrypt.hashSync(customerData.password, 12);
     const createdCustomer = await prisma.customer.create({
       data: { ...customerData, password: hashedPassword },
@@ -49,13 +39,23 @@ export const postCustomer = async (req, res) => {
 export const updateCustomer = async (req, res) => {
   const customerData = req.body;
   try {
-    const hashedPassword = bcrypt.hashSync(customerData.password, 12);
+    let updatedData = { ...customerData }; // Create a copy of customerData
+
+    if (customerData.password) {
+      // Hash the password if it's provided
+      const hashedPassword = bcrypt.hashSync(customerData.password, 12);
+      updatedData.password = hashedPassword; // Update the password field
+    }
+
+    console.log(updatedData);
+
     const customer = await prisma.customer.update({
       where: {
         id: Number(req.params.id),
       },
-      data: { ...customerData, password: hashedPassword },
+      data: updatedData, // Use the updatedData object
     });
+
     res.status(200).json(customer);
   } catch (error) {
     res.status(500).json({ msg: error.message });

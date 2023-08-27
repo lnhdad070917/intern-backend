@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -10,6 +11,12 @@ export const createUserByUsernameAndPassword = async (admin) => {
       ...admin,
       password: hashedPassword,
     },
+  });
+};
+
+const createAccessToken = (user) => {
+  return jwt.sign({ userId: user.id }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: "5m",
   });
 };
 
@@ -66,8 +73,10 @@ export const loginAdmin = async (req, res, next) => {
       res.status(403);
       throw new Error("Invalid login credentials.");
     }
+    const accessToken = createAccessToken(existingAdmin);
 
     res.json({
+      accessToken,
       msg: "success login",
     });
   } catch (err) {

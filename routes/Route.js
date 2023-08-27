@@ -6,7 +6,11 @@ import {
   getProductbyIdParent,
   getProductParent,
   deleteProductById,
+  updateProductDataById,
+  updateProductImageById,
+  searchProductParent,
   updateProductById,
+  getProductAll,
 } from "../controller/productController.js";
 import {
   getCategory,
@@ -53,6 +57,7 @@ import {
   deleteSalesItem,
   updateSalesItem,
   postSalesItem,
+  createSalesItem,
 } from "../controller/salesItemsController.js";
 
 import {
@@ -61,6 +66,7 @@ import {
   updateSales,
   deleteSales,
   postSales,
+  getSalesbyInvoice,
 } from "../controller/salesController.js";
 
 const router = express.Router();
@@ -69,10 +75,12 @@ const router = express.Router();
 router.get("/products", getProduct);
 router.post("/products", postProduct);
 router.get("/products/:id", getProductbyId);
-router.put("/products/:id", updateProductById);
+router.put("/productsid/:id", updateProductById);
 router.delete("/products/:id", deleteProductById);
 router.get("/product-parent/:id", getProductbyIdParent);
 router.get("/product-parent", getProductParent);
+router.get("/product/cari", searchProductParent);
+router.get("/productall", getProductAll);
 
 //Category
 router.get("/categories", getCategory);
@@ -114,12 +122,14 @@ router.delete("/status/:id", deleteStatus);
 router.get("/sales-item", getSalesItem);
 router.get("/sales-item/:id", getSalesItembyId);
 router.post("/sales-item", postSalesItem);
+router.post("/salesitem", createSalesItem);
 router.put("/sales-item/:id", updateSalesItem);
 router.delete("/sales-item/:id", deleteSalesItem);
 
 //Sales
 router.get("/sales", getSales);
 router.get("/sales/:id", getSalesbyId);
+router.get("/sales-track", getSalesbyInvoice);
 router.post("/sales", postSales);
 router.put("/sales/:id", updateSales);
 router.delete("/sales/:id", deleteSales);

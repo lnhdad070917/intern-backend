@@ -34,20 +34,10 @@ model Customer {
   postal_code String @db.VarChar(255)
   username    String @db.VarChar(255)
   password    String @db.LongText
-  refreshTokens RefreshToken[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  sales Sales[]
   sales_item Sales_Item[]
-}
-
-model RefreshToken {
-  id          String   @id @unique @default(uuid())
-  hashedToken String
-  userId      Int
-  customer   Customer  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  revoked     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Product {
@@ -73,27 +63,28 @@ model Sales {
   id             Int        @id @default(autoincrement())
   no_invoice     String
   code_status      Int
-  id_deliveries  Int
   price          Decimal
   total_pay      Decimal
-  id_sales_item  Int
+  id_customer Int
   delivery_name String
   delivery_cost Decimal
+  customer   Customer @relation(fields: [id_customer], references: [id])
   createdAt      DateTime  @default(now())
   UpdatedAt      DateTime  @default(now())
-  sales_item     Sales_Item  @relation(fields: [id_sales_item], references: [id])
+  sales_item     Sales_Item[]
 }
 
 model Sales_Item {
   id         Int      @id @default(autoincrement())
   id_product Int
+  id_sales Int
   price      Decimal
-  qty        Int
   id_customer Int
+  qty        Int
   ket        String
   product    Product  @relation(fields: [id_product], references: [id])
   customer   Customer @relation(fields: [id_customer], references: [id])
-  sales Sales[]
+  sales Sales @relation(fields: [id_sales], references: [id])
 }
 
 model Status {

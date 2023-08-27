@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -11,6 +11,12 @@ export const createUserByEmailAndPassword = async (user) => {
       ...user,
       password: hashedPassword,
     },
+  });
+};
+
+const createAccessToken = (user) => {
+  return jwt.sign({ userId: user.id }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: "5m",
   });
 };
 
@@ -27,6 +33,7 @@ export const postRegister = async (req, res, next) => {
       postal_code,
       username,
     } = req.body;
+
     if (!email || !password) {
       return res
         .status(400)
@@ -56,7 +63,7 @@ export const postRegister = async (req, res, next) => {
       msg: "success",
     });
   } catch (err) {
-    next(err);
+    res.status(400).json({ error: err.message });
   }
 };
 
@@ -81,9 +88,10 @@ export const login = async (req, res, next) => {
       throw new Error("Invalid login credentials.");
     }
 
-    const jti = uuidv4();
+    const accessToken = createAccessToken(existingUser);
 
     res.json({
+      accessToken,
       msg: "success login",
     });
   } catch (err) {
